@@ -80,25 +80,26 @@ class REINFORCE:
             step += 1
             done = terminated or truncated
         
-        returns_tensor = self.compute_returns(rewards)
-        log_probs_tensor = torch.stack(log_probs)
-        loss = torch.sum(-log_probs_tensor * returns_tensor)
+        returns = self.compute_returns(rewards)
+        policy_loss = []
+        for log_prob, G in zip(log_probs, returns):
+            policy_loss.append(-log_prob * G)
 
+        loss = torch.stack(policy_loss).sum()
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
         return np.sum(rewards), step, loss.item()
     
-    def compute_returns(self, rewards: list[float])->torch.Tensor:
+    def compute_returns(self, rewards: list[float])->list[float]:
         # 计算折扣回报 G_t = r_t + gamma * r_{t+1} + gamma^2*r_{t+2}+...
         returns = []
         G = 0
         for reward in reversed(rewards):
             G = reward + self.gamma * G
             returns.insert(0, G)
-        return_tensor = torch.FloatTensor(returns)
-        return return_tensor
+        return returns
 
     def evaluate(self, num_episodes: int = 10):
         episode_rewards = []
