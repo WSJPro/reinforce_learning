@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import time
+from typing import Optional
 
 class PolicyNetwork(nn.Module):
     def __init__(self, state_dim: int = 4, action_dim: int = 2, hidden_dim: int = 128):
@@ -22,11 +23,23 @@ class PolicyNetwork(nn.Module):
         return self.network(x)
 
 class REINFORCE:
-    def __init__(self, max_episode_steps: int = 1000, gamma: float = 0.99, learning_rate: float = 1e-3, log_dir: str = "logs/reinforce"):
-        self.env = gym.make("CartPole-v1", max_episode_steps=max_episode_steps)
+    def __init__(
+            self, 
+            max_episode_steps: int = 1000, 
+            gamma: float = 0.99,
+            learning_rate: float = 1e-3,
+            log_dir: str = "logs/reinforce",
+            seed: Optional[int] = None
+            ):
+        self.env = gym.make("CartPole-v1", max_episode_steps=max_episode_steps, )
         self.gamma = gamma
         self.episode_rewards = []
         self.final_step_records = []
+
+        if seed is not None:
+            self.env.reset(seed=seed)
+            torch.manual_seed(seed)
+            np.random.seed(seed)
 
         state_dim = self.env.observation_space.shape[0]  # 4
         action_dim = self.env.action_space.n             # 2
@@ -152,7 +165,7 @@ def play_game(model_path: str):
 
 if __name__ == "__main__":
     agent = REINFORCE(learning_rate=1e-4, log_dir="logs/reinforce")
-    agent.train()
+    agent.train(num_episodes=1000, print_per=10)
     agent.evaluate()
     agent.save_model(model_path = 'cartpole_policy_reinforce.pth')
     play_game(model_path = 'cartpole_policy_reinforce.pth')
