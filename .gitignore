@@ -3,6 +3,8 @@
 
 # logs
 logs
+runs
 
 # Model
 *.pth
+pths
